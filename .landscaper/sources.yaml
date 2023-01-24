@@ -1,0 +1,10 @@
+---
+name: github_com_reshnm_landscaper_example
+type: git
+version: ${VERSION}
+access:
+  type: github
+  commit: ${COMMIT_SHA}
+  ref: refs/tags/${VERSION}
+  repoUrl: github.com/reshnm/landscaper-example
+---

@@ -1,0 +1,78 @@
+deployItems:
+  - name: podinfo
+    type: landscaper.gardener.cloud/kubernetes-manifest
+    target:
+      name: {{ .imports.targetCluster.metadata.name }}
+      namespace: {{ .imports.targetCluster.metadata.namespace }}
+    config:
+      apiVersion: manifest.deployer.landscaper.gardener.cloud/v1alpha2
+      kind: ProviderConfiguration
+      updateStrategy: update
+      
+      {{ $podinfoImageResource := getResource .cd "name" "podinfo" }}
+      {{ $podinfoImage := $podinfoImageResource.access.imageReference }}
+
+      manifests:
+        - policy: manage
+          manifest:
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: podinfo-deployment
+              namespace: {{ .imports.namespace }}
+              labels:
+              app.kubernetes.io/name: podinfo
+            spec:
+              replicas: 1
+              selector:
+                matchLabels:
+                  app.kubernetes.io/name: podinfo
+              template:
+                metadata:
+                  labels:
+                    app.kubernetes.io/name: podinfo
+                spec:
+                  containers:
+                  - name: podinfo
+                    image: {{ $podinfoImage }}
+                    ports:
+                    - containerPort: 9898
+
+        - policy: manage
+          manifest:
+            apiVersion: v1
+            kind: Service
+            metadata:
+              name: podinfo-service
+              namespace: {{ .imports.namespace }}
+            spec:
+              selector:
+                app.kubernetes.io/name: podinfo
+              ports:
+                - protocol: TCP
+                  port: 80
+                  targetPort: 9898
+
+        - policy: manage
+          manifest:
+            apiVersion: networking.k8s.io/v1
+            kind: Ingress
+            metadata:
+              name: podinfo-ingress
+              namespace: {{ .imports.namespace }}
+              annotations:
+                dns.gardener.cloud/class: garden
+                dns.gardener.cloud/dnsnames: {{ .imports.hostName }}
+            spec:
+              ingressClass: {{ .imports.ingressClass }}
+              rules:
+                - host: {{ .imports.hostName }}
+                  http: 
+                    paths:
+                      - path: "/"
+                        pathType: Prefix
+                        backend:
+                          service:
+                            name: podinfo-service
+                            port:
+                              number: 80

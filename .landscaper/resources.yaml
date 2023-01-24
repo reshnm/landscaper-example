@@ -1,0 +1,19 @@
+---
+type: blueprint
+name: blueprint
+relation: local
+input:
+  type: dir
+  path: ./blueprint
+  mediaType: application/vnd.gardener.landscaper.blueprint.layer.v1.tar+gzip
+  compress: true
+...
+---
+type: ociImage
+name: podinfo
+version: ${VERSION}
+relation: external
+access:
+  type: ociRegistry
+  imageReference: ghcr.io/reshnm/landscaper-example/podinfo:${VERSION}
+...
